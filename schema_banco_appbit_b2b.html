@@ -1,0 +1,109 @@
+
+<div id="erd" style="padding: 1rem 0"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const { svg } = await mermaid.render('erd-svg', `erDiagram
+  EMPRESAS ||--o{ VAGAS : publica
+  VAGAS ||--o{ MATCHES : gera
+  CANDIDATOS ||--o{ MATCHES : recebe
+  MAPA_TALENTOS }o--o{ VAGAS : informa
+
+  EMPRESAS {
+    int id PK
+    string nome
+    string cnpj
+    string setor
+    string regiao
+    float meta_diversidade
+    timestamp created_at
+  }
+
+  VAGAS {
+    int id PK
+    int empresa_id FK
+    string titulo
+    string descricao
+    string skills_requeridas
+    string nivel
+    string regiao
+    float diversidade_minima
+    date data_publicacao
+    date data_prazo
+    string status
+  }
+
+  CANDIDATOS {
+    int id PK
+    string nome
+    int idade
+    string genero
+    string regiao
+    string income_cluster
+    string skills
+    string nivel
+    int experiencia_anos
+    boolean grupo_subrepresentado
+    timestamp created_at
+  }
+
+  MATCHES {
+    int id PK
+    int vaga_id FK
+    int candidato_id FK
+    float score_match
+    boolean badge_diversidade
+    string status
+    timestamp created_at
+  }
+
+  MAPA_TALENTOS {
+    int id PK
+    string cluster
+    string municipio
+    float lat
+    float lon
+    int total_pessoas
+    string income_predominante
+    string age_group_predominante
+    string periodo_pico
+    timestamp updated_at
+  }
+`);
+document.getElementById('erd').innerHTML = svg;
+document.querySelectorAll('#erd svg .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+document.querySelectorAll('#erd svg .row-rect-odd path, #erd svg .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>
